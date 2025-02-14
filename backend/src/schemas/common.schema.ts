@@ -17,3 +17,5 @@ export const passwordSchema = z
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
   .regex(/[0-9]/, "Password must contain at least one number")
   .regex(/[\W]/, "Password must contain at least one special character");
+
+export const idSchema = z.string().length(24, "Invalid id");

@@ -4,13 +4,6 @@ import { JWT_SECRET } from "../config/env.js";
 import { User } from "../models/user.model.js";
 import { IUser } from "../types/user.js";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user: Omit<IUser, "password">;
-    }
-  }
-}
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies.jwt;

@@ -12,6 +12,7 @@ export interface IUser {
   coverImg: string;
   bio: string;
   link: string;
+  likedPosts: Array<Types.ObjectId>;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -6,4 +6,6 @@ export interface INotification {
   to: Types.ObjectId;
   type: "like" | "follow";
   read: Boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
