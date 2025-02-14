@@ -3,8 +3,20 @@ import { User } from "../models/user.model";
 import { Notification } from "../models/notification.model";
 import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
+import {
+  followOrUnfollowUserSchema,
+  getUserProfileSchema,
+  updateProfileSchema,
+} from "../schemas/user.schema";
 
 const getUserProfile = async (req: Request, res: Response) => {
+  const result = getUserProfileSchema.safeParse(req.params);
+
+  if (!result.success) {
+    res.status(400).json(result.error.format());
+    return;
+  }
+
   const { username } = req.params;
 
   const user = await User.findOne({
@@ -45,10 +57,9 @@ const getSuggestedUsers = async (req: Request, res: Response) => {
     },
   ]);
 
-  console.log(users);
-
   if (users.length === 0) {
     res.status(200).json({ msg: "No users to suggest" });
+    return;
   }
 
   const filteredUsers = users.filter(
@@ -64,6 +75,13 @@ const getSuggestedUsers = async (req: Request, res: Response) => {
 };
 
 const followOrUnfollowUser = async (req: Request, res: Response) => {
+  const result = followOrUnfollowUserSchema.safeParse(req.params);
+
+  if (!result.success) {
+    res.status(400).json(result.error.format());
+    return;
+  }
+
   const { id } = req.params;
 
   const userToFollowOrUnfollow = await User.findById(id);
@@ -104,6 +122,7 @@ const followOrUnfollowUser = async (req: Request, res: Response) => {
     );
 
     res.status(200).json({ msg: "You unfollow successfully" });
+    return;
   } else {
     await User.updateOne(
       {
@@ -133,10 +152,18 @@ const followOrUnfollowUser = async (req: Request, res: Response) => {
       type: "follow",
     });
     res.status(200).json({ msg: "You follow successfully" });
+    return;
   }
 };
 
 const updateProfile = async (req: Request, res: Response) => {
+  const result = updateProfileSchema.safeParse(req.body);
+
+  if (!result.success) {
+    res.status(400).json(result.error.format());
+    return;
+  }
+
   const { username, fullName, newPassword, currentPassword, email, bio, link } =
     req.body;
 
@@ -153,6 +180,7 @@ const updateProfile = async (req: Request, res: Response) => {
     res
       .status(400)
       .json({ error: "Please provide both current password and new password" });
+    return;
   }
 
   if (newPassword && currentPassword) {
@@ -206,6 +234,7 @@ const updateProfile = async (req: Request, res: Response) => {
   await user.save();
 
   res.status(200).json(user);
+  return;
 };
 
 export {

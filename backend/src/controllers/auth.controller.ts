@@ -3,18 +3,17 @@ import { User } from "../models/user.model";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET, NODE_ENV } from "../config/env";
+import { loginSchema, registerSchema } from "../schemas/auth.schema";
 
 const registerUser = async (req: Request, res: Response) => {
-  const { username, fullName, email, password } = req.body;
+  const result = registerSchema.safeParse(req.body);
 
-  // use zod here to validate schema
-
-  if (
-    [username, fullName, email, password].some((field) => field?.trim() === "")
-  ) {
-    res.status(400).json({ error: "All the fields are required" });
+  if (!result.success) {
+    res.status(400).json(result.error.format());
     return;
   }
+
+  const { username, fullName, email, password } = req.body;
 
   const existingUser = await User.findOne({ username });
 
@@ -32,7 +31,7 @@ const registerUser = async (req: Request, res: Response) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await User.create({
+  await User.create({
     username,
     fullName,
     email,
@@ -44,12 +43,14 @@ const registerUser = async (req: Request, res: Response) => {
 };
 
 const loginUser = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const result = loginSchema.safeParse(req.body);
 
-  if ([email, password].some((field) => field.trim() === "")) {
-    res.status(400).json({ error: "All the fields are required" });
+  if (!result.success) {
+    res.status(400).json(result.error.format());
     return;
   }
+
+  const { email, password } = req.body;
 
   const user = await User.findOne({ email });
 
