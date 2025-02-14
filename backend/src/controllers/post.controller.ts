@@ -1,4 +1,4 @@
-import { Request, response, Response } from "express";
+import { Request, Response } from "express";
 import {
   commentOnPostSchema,
   createPostSchema,
@@ -57,7 +57,7 @@ const createPost = async (req: Request, res: Response) => {
   }
 
   const post = await Post.create({
-    userId,
+    user: userId,
     text: text || "",
     img: img || "",
   });
@@ -153,10 +153,11 @@ const getUserPosts = async (req: Request, res: Response) => {
   const user = await User.findOne({ username });
 
   if (!user) {
-    return res.status(404).json({ error: "User not found" });
+    res.status(404).json({ error: "User not found" });
+    return;
   }
 
-  const posts = await Post.find({ _id: user._id })
+  const posts = await Post.find({ user: user._id })
     .populate({
       path: "user",
       select: "-password",
@@ -329,4 +330,6 @@ export {
   deletePost,
   getUserPosts,
   likeOrUnlikePost,
+  getLikedPosts,
+  getFollowingPosts,
 };
