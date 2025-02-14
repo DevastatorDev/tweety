@@ -6,12 +6,13 @@ import {
   getMe,
 } from "../controllers/auth.controller.js";
 import { auth } from "../middlewares/auth.middleware.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 
-router.route("/signup").post(registerUser);
-router.route("/login").post(loginUser);
-router.route("/logout").get(logoutUser);
+router.route("/signup").post(asyncHandler(registerUser));
+router.route("/login").post(asyncHandler(loginUser));
+router.route("/logout").get(asyncHandler(logoutUser));
 
 router.route("/me").get(auth, getMe);
 

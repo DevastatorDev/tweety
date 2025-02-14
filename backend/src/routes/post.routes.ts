@@ -10,16 +10,17 @@ import {
   getUserPosts,
   likeOrUnlikePost,
 } from "../controllers/post.controller";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
-router.route("/all").get(auth, getAllPosts);
-router.route("/following").get(auth, getFollowingPosts);
-router.route("/likes/:id").get(auth, getLikedPosts);
-router.route("/user/:username").get(auth, getUserPosts);
-router.route("/create").post(auth, createPost);
-router.route("/like/:id").post(auth, likeOrUnlikePost);
-router.route("/comment/:id").post(auth, commentOnPost);
-router.route("/:id").delete(auth, deletePost);
+router.route("/all").get(auth, asyncHandler(getAllPosts));
+router.route("/following").get(auth, asyncHandler(getFollowingPosts));
+router.route("/likes/:id").get(auth, asyncHandler(getLikedPosts));
+router.route("/user/:username").get(auth, asyncHandler(getUserPosts));
+router.route("/create").post(auth, asyncHandler(createPost));
+router.route("/like/:id").post(auth, asyncHandler(likeOrUnlikePost));
+router.route("/comment/:id").post(auth, asyncHandler(commentOnPost));
+router.route("/:id").delete(auth, asyncHandler(deletePost));
 
 export default router;
