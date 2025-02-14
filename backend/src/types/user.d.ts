@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-interface IUser {
+export interface IUser {
   _id?: Types.ObjectId;
   username: string;
   fullName: string;
@@ -15,5 +15,3 @@ interface IUser {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export default IUser;
