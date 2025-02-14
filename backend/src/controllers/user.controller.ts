@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { User } from "../models/user.model";
+import { Notification } from "../models/notification.model";
 import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 
@@ -125,6 +126,12 @@ const followOrUnfollowUser = async (req: Request, res: Response) => {
         },
       }
     );
+
+    await Notification.create({
+      from: req.user._id,
+      to: id,
+      type: "follow",
+    });
     res.status(200).json({ msg: "You follow successfully" });
   }
 };

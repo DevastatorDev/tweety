@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt, { decode, JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env.js";
 import { User } from "../models/user.model.js";
-import IUser from "../types/user.js";
+import { IUser } from "../types/user.js";
 
 declare global {
   namespace Express {
