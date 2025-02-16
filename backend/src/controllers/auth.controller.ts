@@ -9,7 +9,7 @@ const registerUser = async (req: Request, res: Response) => {
   const result = registerSchema.safeParse(req.body);
 
   if (!result.success) {
-    res.status(400).json(result.error.format());
+    res.status(400).json(result.error.issues[0]);
     return;
   }
 
@@ -46,7 +46,7 @@ const loginUser = async (req: Request, res: Response) => {
   const result = loginSchema.safeParse(req.body);
 
   if (!result.success) {
-    res.status(400).json(result.error.format());
+    res.status(400).json(result.error.issues[0]);
     return;
   }
 

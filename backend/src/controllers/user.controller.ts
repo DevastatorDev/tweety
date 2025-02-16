@@ -13,7 +13,7 @@ const getUserProfile = async (req: Request, res: Response) => {
   const result = getUserProfileSchema.safeParse(req.params);
 
   if (!result.success) {
-    res.status(400).json(result.error.format());
+    res.status(400).json(result.error.issues[0]);
     return;
   }
 
@@ -78,7 +78,7 @@ const followOrUnfollowUser = async (req: Request, res: Response) => {
   const result = followOrUnfollowUserSchema.safeParse(req.params);
 
   if (!result.success) {
-    res.status(400).json(result.error.format());
+    res.status(400).json(result.error.issues[0]);
     return;
   }
 
@@ -160,7 +160,7 @@ const updateProfile = async (req: Request, res: Response) => {
   const result = updateProfileSchema.safeParse(req.body);
 
   if (!result.success) {
-    res.status(400).json(result.error.format());
+    res.status(400).json(result.error.issues[0]);
     return;
   }
 

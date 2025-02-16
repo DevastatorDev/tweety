@@ -8,8 +8,8 @@ import { Link } from "react-router-dom";
 
 interface IPost {
   _id: string;
-  text: string;
-  img: string;
+  text?: string;
+  img?: string;
   user: {
     username: string;
     profileImg: string;

@@ -36,7 +36,7 @@ const createPost = async (req: Request, res: Response) => {
   const result = createPostSchema.safeParse(req.body);
 
   if (!result.success) {
-    res.status(404).json(result.error.format());
+    res.status(404).json(result.error.issues[0]);
     return;
   }
 
@@ -72,12 +72,12 @@ const commentOnPost = async (req: Request, res: Response) => {
   const paramsResult = postIdSchema.safeParse(req.params);
 
   if (!result.success) {
-    res.status(404).json(result.error.format());
+    res.status(404).json(result.error.issues[0]);
     return;
   }
 
   if (!paramsResult.success) {
-    res.status(404).json(paramsResult.error.format());
+    res.status(404).json(paramsResult.error.issues[0]);
     return;
   }
 
@@ -108,7 +108,7 @@ const deletePost = async (req: Request, res: Response) => {
   const result = postIdSchema.safeParse(req.params);
 
   if (!result.success) {
-    res.status(404).json(result.error.format());
+    res.status(404).json(result.error.issues[0]);
     return;
   }
 
@@ -144,7 +144,7 @@ const getUserPosts = async (req: Request, res: Response) => {
   const result = getUserPostsSchema.safeParse(req.params);
 
   if (!result.success) {
-    res.status(404).json(result.error.format());
+    res.status(404).json(result.error.issues[0]);
     return;
   }
 
@@ -174,7 +174,7 @@ const likeOrUnlikePost = async (req: Request, res: Response) => {
   const result = postIdSchema.safeParse(req.params);
 
   if (!result.success) {
-    res.status(404).json(result.error.format());
+    res.status(404).json(result.error.issues[0]);
     return;
   }
 
@@ -261,7 +261,7 @@ const getLikedPosts = async (req: Request, res: Response) => {
   const result = postIdSchema.safeParse(req.params);
 
   if (!result.success) {
-    res.status(404).json(result.error.format());
+    res.status(404).json(result.error.issues[0]);
     return;
   }
 

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
+import axios from "axios";
 
 import XSvg from "../../../components/svgs/X";
 
@@ -7,6 +8,8 @@ import { MdOutlineMail } from "react-icons/md";
 import { FaUser } from "react-icons/fa";
 import { MdPassword } from "react-icons/md";
 import { MdDriveFileRenameOutline } from "react-icons/md";
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -16,16 +19,57 @@ const SignUpPage = () => {
     password: "",
   });
 
+  const { mutate, isPending } = useMutation({
+    mutationFn: async ({
+      email,
+      username,
+      fullName,
+      password,
+    }: {
+      email: string;
+      username: string;
+      fullName: string;
+      password: string;
+    }) => {
+      try {
+        const res = await axios.post(
+          "http://localhost:3000/api/v1/auth/signup",
+          {
+            email,
+            username,
+            fullName,
+            password,
+          }
+        );
+
+        if (!res) {
+          toast.error("Server is not listening");
+        }
+
+        return res.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const message =
+            error.response?.data?.message || error.response?.data?.error;
+          toast.error(message);
+        } else {
+          console.log(error);
+        }
+      }
+    },
+  });
+
+  // useMutation() // when we need to manipulate the data
+  // useQuery() // to fetch the data
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(formData);
+    mutate(formData);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const isError = false;
 
   return (
     <div className="max-w-screen-xl mx-auto flex h-screen px-10">
@@ -86,9 +130,8 @@ const SignUpPage = () => {
             />
           </label>
           <button className="btn rounded-full btn-primary text-white">
-            Sign up
+            {isPending ? "Loading..." : "Sign up"}
           </button>
-          {isError && <p className="text-red-500">Something went wrong</p>}
         </form>
         <div className="flex flex-col lg:w-2/3 gap-2 mt-4">
           <p className="text-white text-lg">Already have an account?</p>
