@@ -1,25 +1,67 @@
 import Post from "./Post";
 import PostSkeleton from "../skeletons/PostSkeleton";
-import { POSTS } from "../../utils/db/dummy";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { useEffect } from "react";
+import { IPost } from "../../types/post";
 
-const Posts = () => {
-  const isLoading = false;
+interface IFeed {
+  feedType: string;
+}
+
+const Posts = ({ feedType }: IFeed) => {
+  const getPostEndPoint = () => {
+    switch (feedType) {
+      case "forYou":
+        return "http://localhost:3000/api/v1/post/all";
+      case "following":
+        return "http://localhost:3000/api/v1/post/following";
+      default:
+        return "http://localhost:3000/api/v1/post/following";
+    }
+  };
+
+  const POST_ENDPOINT = getPostEndPoint();
+
+  const {
+    data: posts,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery<Array<IPost>>({
+    queryKey: ["posts"],
+    queryFn: async () => {
+      const res = await axios.get(POST_ENDPOINT, { withCredentials: true });
+
+      console.log(res);
+
+      if (res) {
+        return res.data;
+      }
+    },
+  });
+
+  console.log(posts);
+
+  useEffect(() => {
+    refetch();
+  }, [feedType]);
 
   return (
     <>
-      {isLoading && (
+      {(isLoading || isRefetching) && (
         <div className="flex flex-col justify-center">
           <PostSkeleton />
           <PostSkeleton />
           <PostSkeleton />
         </div>
       )}
-      {!isLoading && POSTS?.length === 0 && (
+      {!isLoading && !isRefetching && posts?.length === 0 && (
         <p className="text-center my-4">No posts in this tab. Switch 👻</p>
       )}
-      {!isLoading && POSTS && (
+      {!isLoading && !isRefetching && posts && (
         <div>
-          {POSTS.map((post) => (
+          {posts.map((post) => (
             <Post key={post._id} post={post} />
           ))}
         </div>

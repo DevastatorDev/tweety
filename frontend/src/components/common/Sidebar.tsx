@@ -9,22 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-interface IAuthUser {
-  _id: string;
-  username: string;
-  fullName: string;
-  password: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-  link: string;
-  coverImg: string;
-  profileImg: string;
-  followers: Array<string>;
-  following: Array<string>;
-  likedPosts: Array<string>;
-  bio: string;
-}
+import { IAuthUser } from "../../types/auth";
 
 const Sidebar = () => {
   const queryClient = useQueryClient();
