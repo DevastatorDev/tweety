@@ -6,19 +6,67 @@ import { FaTrash } from "react-icons/fa";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { IPost } from "../../types/post";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { IAuthUser } from "../../types/auth";
+import axios from "axios";
+import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 const Post = ({ post }: { post: IPost }) => {
   const [comment, setComment] = useState("");
+
+  const { data: authUser } = useQuery<IAuthUser>({ queryKey: ["authUser"] });
+
+  const queryClient = useQueryClient();
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async () => {
+      const res = await axios.delete(
+        `http://localhost:3000/api/v1/post/${post._id}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res) {
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      if (data.msg) {
+        toast.success(data.msg);
+      } else {
+        toast.success("Post deleted successfully");
+      }
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const message =
+            error.response?.data.message || error.response?.data.error;
+          toast.error(message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        console.log(error);
+      }
+    },
+  });
+
   const postOwner = post.user;
   const isLiked = false;
 
-  const isMyPost = true;
+  const isMyPost = authUser?._id === post.user._id;
 
   const formattedDate = "1h";
 
   const isCommenting = false;
 
-  const handleDeletePost = () => {};
+  const handleDeletePost = () => {
+    mutate();
+  };
 
   const handlePostComment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,10 +99,14 @@ const Post = ({ post }: { post: IPost }) => {
             </span>
             {isMyPost && (
               <span className="flex justify-end flex-1">
-                <FaTrash
-                  className="cursor-pointer hover:text-red-500"
-                  onClick={handleDeletePost}
-                />
+                {!isPending && (
+                  <FaTrash
+                    className="cursor-pointer hover:text-red-500"
+                    onClick={handleDeletePost}
+                  />
+                )}
+
+                {isPending && <LoadingSpinner />}
               </span>
             )}
           </div>
