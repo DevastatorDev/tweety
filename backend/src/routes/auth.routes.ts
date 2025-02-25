@@ -12,7 +12,7 @@ const router = Router();
 
 router.route("/signup").post(asyncHandler(registerUser));
 router.route("/login").post(asyncHandler(loginUser));
-router.route("/logout").get(asyncHandler(logoutUser));
+router.route("/logout").get(auth, asyncHandler(logoutUser));
 
 router.route("/me").get(auth, getMe);
 

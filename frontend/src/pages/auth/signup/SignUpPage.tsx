@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import axios from "axios";
 
@@ -10,8 +10,11 @@ import { MdPassword } from "react-icons/md";
 import { MdDriveFileRenameOutline } from "react-icons/md";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import LoadingSpinner from "../../../components/common/LoadingSpinner";
 
 const SignUpPage = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -31,30 +34,35 @@ const SignUpPage = () => {
       fullName: string;
       password: string;
     }) => {
-      try {
-        const res = await axios.post(
-          "http://localhost:3000/api/v1/auth/signup",
-          {
-            email,
-            username,
-            fullName,
-            password,
-          }
-        );
+      const res = await axios.post("http://localhost:3000/api/v1/auth/signup", {
+        email,
+        username,
+        fullName,
+        password,
+      });
 
-        if (!res) {
-          toast.error("Server is not listening");
-        }
+      if (!res) {
+        toast.error("Server is not listening");
+      }
 
-        return res.data;
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.msg);
+      navigate("/login");
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        console.log(error);
+        if (error.response) {
           const message =
             error.response?.data?.message || error.response?.data?.error;
           toast.error(message);
         } else {
-          console.log(error);
+          toast.error(error.message);
         }
+      } else {
+        console.log(error);
       }
     },
   });
@@ -130,7 +138,7 @@ const SignUpPage = () => {
             />
           </label>
           <button className="btn rounded-full btn-primary text-white">
-            {isPending ? "Loading..." : "Sign up"}
+            {isPending ? <LoadingSpinner /> : "Sign up"}
           </button>
         </form>
         <div className="flex flex-col lg:w-2/3 gap-2 mt-4">

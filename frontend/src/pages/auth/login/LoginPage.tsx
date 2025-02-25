@@ -5,23 +5,74 @@ import XSvg from "../../../components/svgs/X";
 
 import { MdOutlineMail } from "react-icons/md";
 import { MdPassword } from "react-icons/md";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import toast from "react-hot-toast";
+import LoadingSpinner from "../../../components/common/LoadingSpinner";
 
 const LoginPage = () => {
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async ({
+      email,
+      password,
+    }: {
+      email: string;
+      password: string;
+    }) => {
+      const res = await axios.post(
+        "http://localhost:3000/api/v1/auth/login",
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res) {
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      if (data.msg) {
+        toast.success(data.msg);
+      } else {
+        toast.success("Login Successfully");
+      }
+      queryClient.invalidateQueries({ queryKey: ["authUser"] });
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const message =
+            error.response.data?.message || error.response.data?.error;
+
+          toast.error(message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        console.log(error);
+      }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(formData);
+    mutate(formData);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const isError = false;
 
   return (
     <div className="max-w-screen-xl mx-auto flex h-screen">
@@ -37,10 +88,10 @@ const LoginPage = () => {
             <input
               type="text"
               className="grow"
-              placeholder="username"
-              name="username"
+              placeholder="email"
+              name="email"
               onChange={handleInputChange}
-              value={formData.username}
+              value={formData.email}
             />
           </label>
 
@@ -56,9 +107,8 @@ const LoginPage = () => {
             />
           </label>
           <button className="btn rounded-full btn-primary text-white">
-            Login
+            {isPending ? <LoadingSpinner /> : "Login"}
           </button>
-          {isError && <p className="text-red-500">Something went wrong</p>}
         </form>
         <div className="flex flex-col gap-2 mt-4">
           <p className="text-white text-lg">{"Don't"} have an account?</p>

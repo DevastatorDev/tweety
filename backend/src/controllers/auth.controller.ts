@@ -73,7 +73,7 @@ const loginUser = async (req: Request, res: Response) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: NODE_ENV === "development" ? false : true,
+    secure: NODE_ENV !== "development",
     maxAge: 3600000,
     sameSite: "strict",
   });
