@@ -2,23 +2,66 @@ import { CiImageOn } from "react-icons/ci";
 import { BsEmojiSmileFill } from "react-icons/bs";
 import React, { useRef, useState } from "react";
 import { IoCloseSharp } from "react-icons/io5";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { IAuthUser } from "../../types/auth";
 
 const CreatePost = () => {
   const [text, setText] = useState("");
-  const [img, setImg] = useState<null | string | ArrayBuffer>(null);
+  const [img, setImg] = useState<string>("");
 
   const imgRef = useRef(null);
 
-  const isPending = false;
-  const isError = false;
+  const queryClient = useQueryClient();
 
-  const data = {
-    profileImg: "/avatars/boy1.png",
-  };
+  const { mutate, isPending } = useMutation({
+    mutationFn: async ({ text, img }: { text: string; img: string }) => {
+      const res = await axios.post(
+        "http://localhost:3000/api/v1/post/create",
+        {
+          text,
+          img,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      if (res) {
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      setText("");
+      setImg("");
+      if (data.msg) {
+        toast.success(data.msg);
+      } else {
+        toast.success("Post created successfully");
+      }
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const message =
+            error.response.data?.message || error.response.data?.error;
+
+          toast.error(message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        console.log(error);
+      }
+    },
+  });
+
+  const { data: authUser } = useQuery<IAuthUser>({ queryKey: ["authUser"] });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    mutate({ text, img });
     e.preventDefault();
-    alert("Post created successfully");
   };
 
   const handleImgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,7 +70,15 @@ const CreatePost = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        setImg(reader.result);
+        if (reader.result) {
+          if (reader.result instanceof ArrayBuffer) {
+            const decoder = new TextDecoder();
+            const str = decoder.decode(reader.result);
+            setImg(str);
+          } else {
+            setImg(reader.result);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -37,7 +88,7 @@ const CreatePost = () => {
     <div className="flex p-4 items-start gap-4 border-b border-gray-700">
       <div className="avatar">
         <div className="w-8 rounded-full">
-          <img src={data.profileImg || "/avatar-placeholder.png"} />
+          <img src={authUser?.profileImg || "/avatar-placeholder.png"} />
         </div>
       </div>
       <form className="flex flex-col gap-2 w-full" onSubmit={handleSubmit}>
@@ -52,7 +103,7 @@ const CreatePost = () => {
             <IoCloseSharp
               className="absolute top-0 right-0 text-white bg-gray-800 rounded-full w-5 h-5 cursor-pointer"
               onClick={() => {
-                setImg(null);
+                setImg("");
                 imgRef.current.value = null;
               }}
             />
@@ -82,7 +133,6 @@ const CreatePost = () => {
             {isPending ? "Posting..." : "Post"}
           </button>
         </div>
-        {isError && <div className="text-red-500">Something went wrong</div>}
       </form>
     </div>
   );

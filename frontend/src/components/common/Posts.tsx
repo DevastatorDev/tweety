@@ -33,15 +33,11 @@ const Posts = ({ feedType }: IFeed) => {
     queryFn: async () => {
       const res = await axios.get(POST_ENDPOINT, { withCredentials: true });
 
-      console.log(res);
-
       if (res) {
         return res.data;
       }
     },
   });
-
-  console.log(posts);
 
   useEffect(() => {
     refetch();
