@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
 import Posts from "../../components/common/Posts";
 import ProfileHeaderSkeleton from "../../components/skeletons/ProfileHeaderSkeleton";
@@ -12,6 +12,8 @@ import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
 import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { formatMemberSinceDate } from "../../utils/date";
 import { IAuthUser } from "../../types/auth";
 
 const ProfilePage = () => {
@@ -22,10 +24,35 @@ const ProfilePage = () => {
   const coverImgRef = useRef(null);
   const profileImgRef = useRef(null);
 
-  const isLoading = false;
   const isMyProfile = true;
+  let joinedDate;
 
-  const { data: user } = useQuery<IAuthUser>({ queryKey: ["authUser"] });
+  const { username } = useParams();
+
+  const {
+    data: user,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery<IAuthUser>({
+    queryKey: ["userprofile"],
+    queryFn: async () => {
+      const res = await axios.get(
+        `http://localhost:3000/api/v1/user/profile/${username}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res) {
+        return res.data;
+      }
+    },
+  });
+
+  if (user) {
+    joinedDate = formatMemberSinceDate(user?.createdAt);
+  }
 
   const handleImgChange = (e: React.ChangeEvent<HTMLInputElement>, state) => {
     const file = e.target.files[0];
@@ -39,16 +66,20 @@ const ProfilePage = () => {
     }
   };
 
+  useEffect(() => {
+    refetch();
+  }, [username]);
+
   return (
     <>
       <div className="flex-[4_4_0]  border-r border-gray-700 min-h-screen ">
         {/* HEADER */}
-        {isLoading && <ProfileHeaderSkeleton />}
-        {!isLoading && !user && (
+        {(isLoading || isRefetching) && <ProfileHeaderSkeleton />}
+        {!isLoading && !isRefetching && !user && (
           <p className="text-center text-lg mt-4">User not found</p>
         )}
         <div className="flex flex-col">
-          {!isLoading && user && (
+          {!isLoading && !isRefetching && user && (
             <>
               <div className="flex gap-10 px-4 py-2 items-center">
                 <Link to="/">
@@ -159,9 +190,7 @@ const ProfilePage = () => {
                   )}
                   <div className="flex gap-2 items-center">
                     <IoCalendarOutline className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-500">
-                      Joined July 2021
-                    </span>
+                    <span className="text-sm text-slate-500">{joinedDate}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -202,7 +231,7 @@ const ProfilePage = () => {
             </>
           )}
 
-          <Posts />
+          <Posts feedType={feedType} username={username} userId={user?._id} />
         </div>
       </div>
     </>

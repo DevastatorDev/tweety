@@ -2,22 +2,28 @@ import Post from "./Post";
 import PostSkeleton from "../skeletons/PostSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { IPost } from "../../types/post";
 
 interface IFeed {
   feedType: string;
+  username?: string;
+  userId?: string;
 }
 
-const Posts = ({ feedType }: IFeed) => {
+const Posts = ({ feedType, username, userId }: IFeed) => {
   const getPostEndPoint = () => {
     switch (feedType) {
       case "forYou":
         return "http://localhost:3000/api/v1/post/all";
       case "following":
         return "http://localhost:3000/api/v1/post/following";
+      case "posts":
+        return `http://localhost:3000/api/v1/post/user/${username}`;
+      case "likes":
+        return `http://localhost:3000/api/v1/post/likes/${userId}`;
       default:
-        return "http://localhost:3000/api/v1/post/following";
+        return "http://localhost:3000/api/v1/post/all";
     }
   };
 
@@ -41,7 +47,7 @@ const Posts = ({ feedType }: IFeed) => {
 
   useEffect(() => {
     refetch();
-  }, [feedType]);
+  }, [feedType, username, userId]);
 
   return (
     <>
