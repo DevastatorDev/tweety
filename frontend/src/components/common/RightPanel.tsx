@@ -20,11 +20,11 @@ const RightPanel = () => {
     },
   });
 
-  if (suggestedUsers?.length === 0) {
+  const { followUnfollow } = useFollow();
+
+  if (!isLoading && suggestedUsers?.length === 0) {
     return <div className="md:w-64 w-0"></div>;
   }
-
-  const { followUnfollow } = useFollow();
 
   return (
     <div className="hidden lg:block my-4 mx-2">
@@ -40,8 +40,8 @@ const RightPanel = () => {
             </>
           )}
           {!isLoading &&
-            suggestedUsers &&
-            suggestedUsers.map((user) => (
+            suggestedUsers?.length !== 0 &&
+            suggestedUsers?.map((user) => (
               <Link
                 to={`/profile/${user.username}`}
                 className="flex items-center justify-between gap-4"

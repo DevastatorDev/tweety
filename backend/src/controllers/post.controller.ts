@@ -19,7 +19,7 @@ const getAllPosts = async (req: Request, res: Response) => {
       select: "-password",
     })
     .populate({
-      path: "user",
+      path: "comments.user",
       select: "-password",
     });
 
@@ -221,19 +221,14 @@ const likeOrUnlikePost = async (req: Request, res: Response) => {
       }
     );
 
-    res.status(200).json({ msg: "Post unliked successfully" });
+    const updatedLikes = postToLikeOrUnlike.likes.filter(
+      (id) => id.toString() !== userId.toString()
+    );
+
+    res.status(200).json(updatedLikes);
     return;
   } else {
-    await Post.updateOne(
-      {
-        _id: id,
-      },
-      {
-        $push: {
-          likes: userId,
-        },
-      }
-    );
+    postToLikeOrUnlike.likes.push(userId);
 
     await User.updateOne(
       {
@@ -245,16 +240,20 @@ const likeOrUnlikePost = async (req: Request, res: Response) => {
         },
       }
     );
+
+    await postToLikeOrUnlike.save();
+
+    await Notification.create({
+      from: userId,
+      to: postToLikeOrUnlike.user,
+      type: "like",
+    });
+
+    const updatedLikes = postToLikeOrUnlike.likes;
+
+    res.status(200).json(updatedLikes);
+    return;
   }
-
-  await Notification.create({
-    from: userId,
-    to: postToLikeOrUnlike.user,
-    type: "like",
-  });
-
-  res.status(200).json({ msg: "Post liked successfully" });
-  return;
 };
 
 const getLikedPosts = async (req: Request, res: Response) => {

@@ -58,7 +58,7 @@ const getSuggestedUsers = async (req: Request, res: Response) => {
   ]);
 
   if (users.length === 0) {
-    res.status(200).json({ msg: "No users to suggest" });
+    res.status(200).json([]);
     return;
   }
 

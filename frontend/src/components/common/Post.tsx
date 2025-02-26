@@ -19,7 +19,7 @@ const Post = ({ post }: { post: IPost }) => {
 
   const queryClient = useQueryClient();
 
-  const { mutate, isPending } = useMutation({
+  const { mutate: deletePost, isPending: isDeleting } = useMutation({
     mutationFn: async () => {
       const res = await axios.delete(
         `http://localhost:3000/api/v1/post/${post._id}`,
@@ -55,24 +55,114 @@ const Post = ({ post }: { post: IPost }) => {
     },
   });
 
+  const { mutate: likeUnlike, isPending: isLiking } = useMutation({
+    mutationFn: async () => {
+      const res = await axios.get(
+        `http://localhost:3000/api/v1/post/like/${post._id}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res) {
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      // no the best ux
+      // queryClient.invalidateQueries({ queryKey: ["posts"] });
+
+      // instead update the cache
+
+      queryClient.setQueryData(["posts"], (oldData: Array<IPost>) => {
+        return oldData.map((p) => {
+          if (p._id === post._id) {
+            return { ...p, likes: data };
+          }
+          return p;
+        });
+      });
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const message =
+            error.response?.data.message || error.response?.data.error;
+          toast.error(message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        console.log(error);
+      }
+    },
+  });
+
+  const { mutate: commentOnPost, isPending: isCommenting } = useMutation({
+    mutationFn: async (comment: string) => {
+      const res = await axios.post(
+        `http://localhost:3000/api/v1/post/comment/${post._id}`,
+        {
+          text: comment,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res) {
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      if (data.msg) {
+        toast.success(data.msg);
+      }
+      setComment("");
+      // use caching for better ux
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const message =
+            error.response?.data.message || error.response?.data.error;
+          toast.error(message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        console.log(error);
+      }
+    },
+  });
+
   const postOwner = post.user;
-  const isLiked = false;
+
+  let isLiked;
+
+  if (authUser) {
+    isLiked = post.likes.includes(authUser?._id);
+  }
 
   const isMyPost = authUser?._id === post.user._id;
 
   const formattedDate = "1h";
 
-  const isCommenting = false;
-
   const handleDeletePost = () => {
-    mutate();
+    deletePost();
   };
 
   const handlePostComment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isCommenting) return;
+    commentOnPost(comment);
   };
 
-  const handleLikePost = () => {};
+  const handleLikePost = () => {
+    if (isLiking) return;
+    likeUnlike();
+  };
 
   return (
     <>
@@ -99,14 +189,14 @@ const Post = ({ post }: { post: IPost }) => {
             </span>
             {isMyPost && (
               <span className="flex justify-end flex-1">
-                {!isPending && (
+                {!isDeleting && (
                   <FaTrash
                     className="cursor-pointer hover:text-red-500"
                     onClick={handleDeletePost}
                   />
                 )}
 
-                {isPending && <LoadingSpinner />}
+                {isDeleting && <LoadingSpinner />}
               </span>
             )}
           </div>
@@ -135,7 +225,6 @@ const Post = ({ post }: { post: IPost }) => {
                   {post.comments?.length}
                 </span>
               </div>
-              {/* We're using Modal Component from DaisyUI */}
               <dialog
                 id={`comments_modal${post._id}`}
                 className="modal border-none outline-none"
@@ -189,11 +278,7 @@ const Post = ({ post }: { post: IPost }) => {
                       onChange={(e) => setComment(e.target.value)}
                     />
                     <button className="btn btn-primary rounded-full btn-sm text-white px-4">
-                      {isCommenting ? (
-                        <span className="loading loading-spinner loading-md"></span>
-                      ) : (
-                        "Post"
-                      )}
+                      {isCommenting ? <LoadingSpinner /> : "Post"}
                     </button>
                   </form>
                 </div>
@@ -211,16 +296,17 @@ const Post = ({ post }: { post: IPost }) => {
                 className="flex gap-1 items-center group cursor-pointer"
                 onClick={handleLikePost}
               >
-                {!isLiked && (
+                {isLiking && <LoadingSpinner size="sm" />}
+                {!isLiked && !isLiking && (
                   <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
                 )}
-                {isLiked && (
+                {isLiked && !isLiking && (
                   <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500 " />
                 )}
 
                 <span
-                  className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-                    isLiked ? "text-pink-500" : ""
+                  className={`text-sm  group-hover:text-pink-500 ${
+                    isLiked ? "text-pink-500" : "text-slate-500"
                   }`}
                 >
                   {post.likes?.length}
