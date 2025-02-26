@@ -4,33 +4,60 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
 import { FaHeart } from "react-icons/fa6";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { INotification } from "../../types/notification";
+import toast from "react-hot-toast";
 
 const NotificationPage = () => {
-  const isLoading = false;
-  const notifications = [
-    {
-      _id: "1",
-      from: {
-        _id: "1",
-        username: "johndoe",
-        profileImg: "/avatars/boy2.png",
-      },
-      type: "follow",
-    },
-    {
-      _id: "2",
-      from: {
-        _id: "2",
-        username: "janedoe",
-        profileImg: "/avatars/girl1.png",
-      },
-      type: "like",
-    },
-  ];
+  const queryClient = useQueryClient();
 
-  const deleteNotifications = () => {
-    alert("All notifications deleted");
-  };
+  const { data: notifications, isLoading } = useQuery<Array<INotification>>({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await axios.get("http://localhost:3000/api/v1/notification", {
+        withCredentials: true,
+      });
+
+      if (res) {
+        return res.data;
+      }
+    },
+  });
+
+  const { mutate: deleteComment } = useMutation({
+    mutationFn: async () => {
+      const res = await axios.delete(
+        "http://localhost:3000/api/v1/notification",
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res) {
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      if (data.msg) {
+        toast.success(data.msg);
+      }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const message =
+            error.response?.data.message || error.response?.data.error;
+          toast.error(message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        console.log(error);
+      }
+    },
+  });
 
   return (
     <>
@@ -46,7 +73,7 @@ const NotificationPage = () => {
               className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
             >
               <li>
-                <a onClick={deleteNotifications}>Delete all notifications</a>
+                <a onClick={() => deleteComment()}>Delete all notifications</a>
               </li>
             </ul>
           </div>

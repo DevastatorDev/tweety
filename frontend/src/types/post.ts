@@ -13,6 +13,6 @@ export interface IPost {
   img: string;
   likes: Array<string>;
   comments: Array<IComments> | undefined;
-  creadetAt: Date;
+  createdAt: Date;
   updatedAt: Date;
 }
