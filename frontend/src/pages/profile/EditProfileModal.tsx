@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import useUpdateUserProfile from "../../hooks/useUpdateUserProfile";
+import { IAuthUser } from "../../types/auth";
 
-const EditProfileModal = () => {
+const EditProfileModal = ({ authUser }: { authUser: IAuthUser }) => {
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -11,17 +13,35 @@ const EditProfileModal = () => {
     currentPassword: "",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { updateProfile, isUpdatingProfile } = useUpdateUserProfile();
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  useEffect(() => {
+    if (authUser) {
+      setFormData({
+        fullName: authUser.fullName,
+        username: authUser.username,
+        email: authUser.email,
+        bio: authUser.bio,
+        link: authUser.link,
+        newPassword: "",
+        currentPassword: "",
+      });
+    }
+  }, [authUser]);
 
   return (
     <>
       <button
         className="btn btn-outline rounded-full btn-sm"
-        onClick={() =>
-          document.getElementById("edit_profile_modal").showModal()
-        }
+        onClick={() => {
+          document.getElementById("edit_profile_modal").showModal();
+        }}
       >
         Edit profile
       </button>
@@ -96,8 +116,15 @@ const EditProfileModal = () => {
               name="link"
               onChange={handleInputChange}
             />
-            <button className="btn btn-primary rounded-full btn-sm text-white">
-              Update
+            <button
+              className="btn btn-primary rounded-full btn-sm text-white"
+              onClick={(e) => {
+                e.preventDefault();
+                updateProfile(formData);
+              }}
+            >
+              {isUpdatingProfile && "Updating"}
+              {!isUpdatingProfile && "Update"}
             </button>
           </form>
         </div>

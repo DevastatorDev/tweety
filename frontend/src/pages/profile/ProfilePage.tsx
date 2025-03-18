@@ -11,21 +11,26 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { formatMemberSinceDate } from "../../utils/date";
 import { IAuthUser } from "../../types/auth";
+import useFollow from "../../hooks/useFollow";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import toast from "react-hot-toast";
 
 const ProfilePage = () => {
-  const [coverImg, setCoverImg] = useState(null);
-  const [profileImg, setProfileImg] = useState(null);
+  const [coverImg, setCoverImg] = useState("");
+  const [profileImg, setProfileImg] = useState("");
   const [feedType, setFeedType] = useState("posts");
 
   const coverImgRef = useRef(null);
   const profileImgRef = useRef(null);
 
-  const isMyProfile = true;
+  const queryClient = useQueryClient();
+
   let joinedDate;
+  let isFollowed;
 
   const { username } = useParams();
 
@@ -50,17 +55,85 @@ const ProfilePage = () => {
     },
   });
 
+  const { mutate: updateProfile, isPending: isUpdatingProfile } = useMutation({
+    mutationFn: async ({
+      coverImg,
+      profileImg,
+    }: {
+      coverImg: string;
+      profileImg: string;
+    }) => {
+      const res = await axios.put(
+        `http://localhost:3000/api/v1/user/update`,
+        {
+          coverImg,
+          profileImg,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res) {
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      if (data.msg) {
+        toast.success(data.msg);
+      }
+      setCoverImg("");
+      setProfileImg("");
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["userprofile"] }),
+        queryClient.invalidateQueries({ queryKey: ["authUser"] }),
+      ]);
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const message =
+            error.response?.data.message || error.response?.data.error;
+          toast.error(message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        console.log(error);
+      }
+    },
+  });
+
+  const { data: authUser } = useQuery<IAuthUser>({ queryKey: ["authUser"] });
+
+  const { followUnfollow, isPending: isFollowing } = useFollow();
+
   if (user) {
     joinedDate = formatMemberSinceDate(user?.createdAt);
+    isFollowed = authUser?.following.includes(user?._id);
   }
 
-  const handleImgChange = (e: React.ChangeEvent<HTMLInputElement>, state) => {
+  const isMyProfile = authUser?._id === user?._id;
+
+  const handleImgChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    state: string
+  ) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        state === "coverImg" && setCoverImg(reader.result);
-        state === "profileImg" && setProfileImg(reader.result);
+        if (reader.result) {
+          if (reader.result instanceof ArrayBuffer) {
+            const decoder = new TextDecoder();
+            const str = decoder.decode(reader.result);
+            state === "coverImg" && setCoverImg(str);
+            state === "profileImg" && setProfileImg(str);
+          } else {
+            state === "coverImg" && setCoverImg(reader.result);
+            state === "profileImg" && setProfileImg(reader.result);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -144,21 +217,26 @@ const ProfilePage = () => {
                 </div>
               </div>
               <div className="flex justify-end px-4 mt-5">
-                {isMyProfile && <EditProfileModal />}
+                {isMyProfile && authUser && (
+                  <EditProfileModal authUser={authUser} />
+                )}
                 {!isMyProfile && (
                   <button
                     className="btn btn-outline rounded-full btn-sm"
-                    onClick={() => alert("Followed successfully")}
+                    onClick={() => followUnfollow(user._id)}
                   >
-                    Follow
+                    {isFollowing && <LoadingSpinner />}
+                    {!isFollowing && isFollowed && "Unfollow"}
+                    {!isFollowing && !isFollowed && "follow"}
                   </button>
                 )}
                 {(coverImg || profileImg) && (
                   <button
                     className="btn btn-primary rounded-full btn-sm text-white px-4 ml-2"
-                    onClick={() => alert("Profile updated successfully")}
+                    onClick={() => updateProfile({ coverImg, profileImg })}
                   >
-                    Update
+                    {isUpdatingProfile && "Updating"}
+                    {!isUpdatingProfile && "Update"}
                   </button>
                 )}
               </div>
@@ -178,12 +256,12 @@ const ProfilePage = () => {
                       <>
                         <FaLink className="w-3 h-3 text-slate-500" />
                         <a
-                          href="https://youtube.com/@asaprogrammer_"
+                          href={user.link}
                           target="_blank"
                           rel="noreferrer"
                           className="text-sm text-blue-500 hover:underline"
                         >
-                          youtube.com/@asaprogrammer_
+                          {user.link}
                         </a>
                       </>
                     </div>

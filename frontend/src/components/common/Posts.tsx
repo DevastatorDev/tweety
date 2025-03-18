@@ -2,7 +2,7 @@ import Post from "./Post";
 import PostSkeleton from "../skeletons/PostSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useEffect, useId } from "react";
+import { useEffect } from "react";
 import { IPost } from "../../types/post";
 
 interface IFeed {

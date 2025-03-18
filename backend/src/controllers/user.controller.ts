@@ -8,6 +8,7 @@ import {
   getUserProfileSchema,
   updateProfileSchema,
 } from "../schemas/user.schema";
+import { passwordSchema } from "../schemas/common.schema";
 
 const getUserProfile = async (req: Request, res: Response) => {
   const result = getUserProfileSchema.safeParse(req.params);
@@ -176,7 +177,7 @@ const updateProfile = async (req: Request, res: Response) => {
     return;
   }
 
-  if (!(newPassword && currentPassword) || !(currentPassword && newPassword)) {
+  if ((newPassword && !currentPassword) || (currentPassword && !newPassword)) {
     res
       .status(400)
       .json({ error: "Please provide both current password and new password" });
@@ -184,6 +185,19 @@ const updateProfile = async (req: Request, res: Response) => {
   }
 
   if (newPassword && currentPassword) {
+    const newPasswordResult = passwordSchema.safeParse(newPassword);
+    const currentPasswordResult = passwordSchema.safeParse(currentPassword);
+
+    if (!newPasswordResult.success) {
+      res.status(400).json(newPasswordResult.error.issues[0]);
+      return;
+    }
+
+    if (!currentPasswordResult.success) {
+      res.status(400).json(currentPasswordResult.error.issues[0]);
+      return;
+    }
+
     const isPasswordCorrect = await bcrypt.compare(
       currentPassword,
       user.password
@@ -218,7 +232,7 @@ const updateProfile = async (req: Request, res: Response) => {
       }
       await cloudinary.uploader.destroy(imgId.split(".")[0]);
     } else {
-      const cldRes = await cloudinary.uploader.upload(profileImg);
+      const cldRes = await cloudinary.uploader.upload(coverImg);
       coverImg = cldRes.secure_url;
     }
   }

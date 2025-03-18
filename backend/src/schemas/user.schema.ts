@@ -17,8 +17,6 @@ export const followOrUnfollowUserSchema = z.object({
 export const updateProfileSchema = z.object({
   username: usernameSchema.optional(),
   fullName: fullNameSchema.optional(),
-  currentPassword: passwordSchema,
-  newPassword: passwordSchema,
   email: emailSchema.optional(),
   profileImg: z.string().optional(),
   coverImg: z.string().optional(),
